@@ -1,0 +1,18 @@
+Vagrant.configure("2") do |config|
+    config.vm.box =- "debian/bookworm64"
+    
+    config.vm.define "vburtonS" do |control|
+        control.vm.hostname = "vburtonS"
+
+        control.vm.provider "virtualbox" do |vb|
+            vb.name = "vburtonS"
+            vb.memory = 4096
+            vb.cpus = 2
+        end
+
+        control.vm.provision "shell", inline: <<-SHELL
+            apt-get update -y
+            apt-get install -y curl ca-certificates sudo net-tools openssh-server
+            curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.110" sh -
+        SHELL
+    end

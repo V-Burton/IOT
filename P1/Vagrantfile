@@ -15,8 +15,6 @@ Vagrant.configure("2") do |config|
     config.vm.box = "debian/bookworm64"
     config.ssh.insert_key=false
 
-    ssh_pub_key = File.read(File.expand_path("~/.ssh/vagrantConfig.pub"))
-
     config.vm.define "vburtonS" do |control|
         control.vm.hostname = SERVICES['vburtonS'][:hostname]
         control.vm.network "private_network", ip: SERVICES['vburtonS'][:ip]
@@ -29,13 +27,9 @@ Vagrant.configure("2") do |config|
 
         control.vm.provision "shell", inline: <<-SHELL
             apt-get update -y
-            apt-get install -y curl ca-certificates sudo net-tools openssh-server
+            apt-get install -y curl sudo net-tools
 
             curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.110" sh -
-
-            cp /etc/rancher/k3s/k3s.yaml /home/vagrant/k3s.yaml
-            sed -i 's/127.0.0.1/192.168.56.110/' /home/vagrant/k3s.yaml
-            chown vagrant:vagrant /home/vagrant/k3s.yaml
 
             echo "alias k='sudo k3s kubectl'" >> /home/vagrant/.bashrc
 
@@ -58,14 +52,12 @@ Vagrant.configure("2") do |config|
 
         control.vm.provision "shell", inline: <<-SHELL
             apt-get update -y
-            apt-get install -y curl ca-certificates sudo net-tools openssh-client
-
+            apt-get install -y curl sudo net-tools
 
             export K3S_GET_TOKEN=$(cat /vagrant/node-token)
             curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.111" K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=${K3S_GET_TOKEN} sh -
 
             echo "alias k='sudo k3s kubectl'" >> /home/vagrant/.bashrc
-            export KUBECONFIG=/home/vagrant/k3s.yaml
         SHELL
     end
 end
