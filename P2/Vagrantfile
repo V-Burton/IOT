@@ -17,5 +17,16 @@ Vagrant.configure("2") do |config|
             curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.110" sh -
             echo "alias k='sudo k3s kubectl'" >> /home/vagrant/.bashrc
         SHELL
+
+        control.vm.provision "file", source: "app1-deployment.yaml", destination: "/vagrant/app1-deployment.yaml"
+        control.vm.provision "file", source: "app2-deployment.yaml", destination: "/vagrant/app2-deployment.yaml"
+        control.vm.provision "file", source: "app3-deployment.yaml", destination: "/vagrant/app3-deployment.yaml"
+        control.vm.provision "file", source: "ingress.yaml", destination: "/vagrant/ingress.yaml"
+        control.vm.provision "shell", inline: <<-SHELL
+            kubectl apply -f /vagrant/app1-deployment.yaml
+            kubectl apply -f /vagrant/app2-deployment.yaml
+            kubectl apply -f /vagrant/app3-deployment.yaml
+            kubectl apply -f /vagrant/ingress.yaml
+        SHELL
     end
 end
