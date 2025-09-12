@@ -1,0 +1,29 @@
+global:
+  hosts:
+    domain: gitlab.local
+    https: false
+    externalIP: 127.0.0.1
+  edition: ce
+  
+  ingress:
+    enabled: false
+    configureCertmanager: false
+
+  initialRootPassword:
+    secret: gitlab-initial-root-password
+    key: password
+
+nginx-ingress:
+  enabled: false
+
+gitlab:
+  webservice:
+    ingress:
+      enabled: false
+    service:
+      type: ClusterIP
+
+prometheus:
+  install: false
+grafana:
+  enabled: false
