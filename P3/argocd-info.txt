@@ -1,0 +1,10 @@
+ArgoCD Connection Info
+=====================
+URL: http://localhost:8080
+Username: admin
+Password: kJmNTGNEt9MoN2bv
+Port-forward PID: 
+
+Commands:
+- Stop port-forward: kill 
+- Restart port-forward: kubectl port-forward svc/argocd-server -n argocd 8080:443
