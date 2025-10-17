@@ -59,12 +59,14 @@ else
     exit 1
 fi
 
+HOST_IP=$(hostname -I | awk '{print $1}')
+
 # 2. Création du cluster k3d
 echo "🔧 Création du cluster k3d..."
 if k3d cluster list | grep -q "argocd"; then
     echo "✅ Le cluster k3d existe déjà"
 else
-    k3d cluster create argocd --servers 1 --agents 1 -p "443:443@loadbalancer" -p "6443:6443@loadbalancer"
+    k3d cluster create argocd --servers 1 --agents 1 -p "443:443@loadbalancer"
     echo "✅ Cluster k3d créé avec succès"
 fi
 
@@ -82,6 +84,7 @@ else
     echo "✅ Namespaces argocd et dev créés"
 fi
 
+
 # 4. Installation d'ArgoCD
 echo "🔧 Installation d'ArgoCD..."
 if kubectl get pods -n argocd | grep -q argocd-server; then
@@ -89,6 +92,7 @@ if kubectl get pods -n argocd | grep -q argocd-server; then
 else
     echo "🔧 Déploiement d'ArgoCD dans le namespace argocd..."
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    echo "✅ ArgoCD déployé"
 
     # Attendre que tous les pods ArgoCD soient prêts
     wait_for_condition "kubectl get pods -n argocd | grep -v NAME | awk '{print \$3}' | grep -v Running | wc -l | grep -q '^0$'" "⏳ Attente du démarrage d'ArgoCD" 600
@@ -107,6 +111,14 @@ else
     ]'
     kubectl rollout status deployment argocd-server -n argocd
 
+    # Patch pour monter le certificat CA de GitLab dans argocd-repo-server
+    # echo "[INFO] === Ajout du certificat CA GitLab dans argocd-repo-server ==="
+    # kubectl patch deployment argocd-repo-server -n argocd --type='json' -p='[
+    #   {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "gitlab-ca", "configMap": {"name": "gitlab-ca-cert"}}},
+    #   {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "gitlab-ca", "mountPath": "/etc/ssl/certs/gitlab.local.crt", "subPath": "ca.crt"}}
+    # ]'
+    # kubectl rollout status deployment argocd-repo-server -n argocd
+
     echo "🌐 Création de l'Ingress pour ArgoCD (argocd.local)..."
     kubectl apply -f "$(dirname "$0")/../confs/ingress-argocd.yaml"
     echo "✅ Ingress créé"
@@ -116,6 +128,11 @@ fi
 echo "🔑 Récupération du mot de passe ArgoCD..."
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo "📋 Mot de passe ArgoCD admin: $ARGOCD_PASSWORD"
+# Enregistrement dans un secret kubernetes
+kubectl create secret generic argocd-admin-password \
+  -n argocd \
+  --from-literal=password="$ARGOCD_PASSWORD" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 # 6. Connexion ArgoCD CLI
 echo "🔐 Connexion à ArgoCD via CLI..."

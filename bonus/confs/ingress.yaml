@@ -1,21 +1,33 @@
-# gitlab-ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
 metadata:
-  name: gitlab-custom
+  name: gitlab-headers
   namespace: gitlab
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
-  rules:
-  - host: gitlab.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: gitlab-webservice-default  
-            port:
-              number: 8181
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+      X-Forwarded-Ssl: "on"
+      X-Forwarded-Port: "443"
+      X-Forwarded-Host: "gitlab.local"
+
+---
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    match: Host(`gitlab.local`)
+    services:
+      - name: gitlab-webservice-default
+        port: 8080
+    middlewares:
+      - name: gitlab-headers
+  tls:
+    certResolver: default

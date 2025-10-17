@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd
+  namespace: argocd
+data:
+  # === Autorise ArgoCD à accéder à des dépôts avec certificats self-signed ===
+  repositories: |
+    - url: https://gitlab.local/root/vburton-ikaismou-app.git
+      insecure: true
