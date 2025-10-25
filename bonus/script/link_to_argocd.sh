@@ -40,3 +40,9 @@ argocd app create hello-iot-bonus \
   --sync-policy automated \
   --auto-prune \
   --self-heal
+
+echo "Upgrade ingress hello-iot to hello-iot-bonus..."
+kubectl apply -f $(dirname "$0")/../confs/ingress-hello-iot-bonus.yaml
+
+# Synchronisation initiale
+argocd app sync hello-iot-bonus
