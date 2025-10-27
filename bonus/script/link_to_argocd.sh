@@ -21,7 +21,6 @@ echo "📦 Ajout/mise à jour du dépôt GitLab dans ArgoCD..."
 argocd repo add "$GITLAB_HTTP_URL" \
   --username root \
   --password "$GITLAB_ROOT_PASSWORD" \
-  --insecure-skip-server-verification \
   --upsert || echo "⚠️ Erreur lors de l'ajout du dépôt"
 
 echo "🚀 Création de l'application ArgoCD pour hello-iot-bonus..."

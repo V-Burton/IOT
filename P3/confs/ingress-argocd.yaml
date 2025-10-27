@@ -12,10 +12,5 @@ spec:
     services:
     - name: argocd-server
       port: 80
-  - kind: Rule
-    match: Host(`argocd.local`) && PathPrefix(`/api`)
-    services:
-    - name: argocd-server
-      port: 80
   tls:
     certResolver: default

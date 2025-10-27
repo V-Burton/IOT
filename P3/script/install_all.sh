@@ -121,6 +121,8 @@ echo "🔑 Récupération du mot de passe ArgoCD..."
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo "📋 Mot de passe ArgoCD admin: $ARGOCD_PASSWORD"
 
+wait_for_condition "kubectl get pods -n argocd | grep argocd-repo-server | grep -q Running" "⏳ Attente que le repo-server ArgoCD soit prêt"
+
 # 6. Connexion ArgoCD CLI
 echo "🔐 Connexion à ArgoCD via CLI..."
 argocd login argocd.local --username admin --password "$ARGOCD_PASSWORD" --grpc-web --insecure
