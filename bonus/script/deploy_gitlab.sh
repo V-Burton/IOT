@@ -1,7 +1,6 @@
 #!/bin/bash
-set -e  # Arrête le script en cas d'erreur
+set -e
 
-# Fonction d'attente avec spinner
 wait_for_condition() {
     local condition="$1"
     local message="$2"
@@ -24,7 +23,6 @@ wait_for_condition() {
     fi
 }
 
-# Delete namespace gitlab if it exists
 destroy_namespace() {
     if kubectl get namespace gitlab >/dev/null 2>&1; then
         echo "🗑️ Suppression du namespace gitlab existant..."
@@ -33,7 +31,6 @@ destroy_namespace() {
     fi
 }
 
-# Call Delete namespace si option destroy is passed
 if [ "$1" == "destroy" ]; then
     destroy_namespace
     exit 0
@@ -82,24 +79,16 @@ fi
 echo "⏳ Attente que les migrations GitLab soient terminées (peut prendre plusieurs minutes)..."
 kubectl wait --for=condition=ready pod -l app=webservice -n gitlab --timeout=600s
 echo "✅ GitLab est complètement opérationnel (migrations terminées)"
-kubectl apply -f $(d irname "$0")/../confs/ingress.yaml -n gitlab
+kubectl apply -f $(dirname "$0")/../confs/ingress.yaml -n gitlab
 echo "✅ Déploiement de GitLab terminé"
-# Récupère le mot de passe initial root depuis le secret généré par le chart
+
 PASSWORD="$(kubectl get secret gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode 2>/dev/null || true)"
 
 if [[ -z "$PASSWORD" ]]; then
   echo "⚠️ Impossible de lire gitlab-gitlab-initial-root-password dans le namespace gitlab."
   echo "   Vérifie que le chart a bien créé le secret ou récupère manuellement le mot de passe."
-else
-  # Crée ou met à jour un secret dédié contenant le mot de passe root (clef: password)
-  kubectl create secret generic gitlab-root-password \
-    -n gitlab \
-    --from-literal=password="$PASSWORD" \
-    --dry-run=client -o yaml | kubectl apply -f -
-
-  echo "🔒 Mot de passe root stocké dans le secret 'gitlab-root-password' (namespace: gitlab)."
+  PASSWORD="<non disponible>"
 fi
 
-# Expose le mot de passe en variable d'environnement pour usage immédiat dans le shell courant
 export PASSWORD
 echo "🌐 Accédez à GitLab via https://gitlab.local (utilisateur: root, mot de passe: $PASSWORD)"
