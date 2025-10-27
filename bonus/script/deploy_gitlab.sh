@@ -77,7 +77,12 @@ else
     echo "❌ Échec du démarrage de GitLab"
     exit 1
 fi
-kubectl apply -f $(dirname "$0")/../confs/ingress.yaml -n gitlab
+
+# Attente que les migrations soient complètement terminées
+echo "⏳ Attente que les migrations GitLab soient terminées (peut prendre plusieurs minutes)..."
+kubectl wait --for=condition=ready pod -l app=webservice -n gitlab --timeout=600s
+echo "✅ GitLab est complètement opérationnel (migrations terminées)"
+kubectl apply -f $(d irname "$0")/../confs/ingress.yaml -n gitlab
 echo "✅ Déploiement de GitLab terminé"
 # Récupère le mot de passe initial root depuis le secret généré par le chart
 PASSWORD="$(kubectl get secret gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' 2>/dev/null | base64 --decode 2>/dev/null || true)"
